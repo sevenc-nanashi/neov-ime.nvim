@@ -1,6 +1,7 @@
 # neov-ime.nvim
 
-<video src="./demo.mp4" />
+https://github.com/user-attachments/assets/e9fa8a06-6b5f-4edc-9c6b-b68ac7a66c63
+
 Neovim side implementation for Neovide's IME support.
 
 > [!WARNING]
