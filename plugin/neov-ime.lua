@@ -1,9 +1,20 @@
--- Detect if nvim is running in Neovide; if not, don't load the IME handlers
-if vim.g.neovide == nil or vim.g.neovide == false then
-  return
+-- Detect if nvim is running in Neovide, and defer the initialization if not.
+-- Note that `vim.g.neovide` might be set after this script is loaded, especially
+-- some remote-control setups like `nvrh`. (And I really love nvrh!)
+-- So we watch the variable instead of checking it once.
+if vim.g.neovide == true then
+  require("neov-ime").install()
+else
+  vim.api.nvim_exec2(
+    [[
+      function s:on_neovide_set()
+        if vim.g.neovide == true then
+          lua require("neov-ime").install()
+          dictwatcherdel(g:, "neovide", function('s:on_neovide_set'))
+        endif
+      endfunction
+      call dictwatcheradd(g:, "neovide", function('s:on_neovide_set'))
+    ]],
+    { output = false }
+  )
 end
-
-local neovide_ime = require("neov-ime")
-
-neovide.preedit_handler = neovide_ime.preedit_handler
-neovide.commit_handler = neovide_ime.commit_handler

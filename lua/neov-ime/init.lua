@@ -274,4 +274,10 @@ M.commit_handler = function(commit_raw_text, commit_formatted_text)
   ime_context.is_commited = true
 end
 
+---Install the preedit and commit handlers to Neovide.
+M.install = function()
+  neovide.preedit_handler = M.preedit_handler
+  neovide.commit_handler = M.commit_handler
+end
+
 return M
