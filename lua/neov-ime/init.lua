@@ -173,14 +173,14 @@ local function preedit_handler_extmark(preedit_raw_text, cursor_offset_start, cu
     local virt_text
     if selected_section ~= "" then
       virt_text = {
-        { preedit_raw_text:sub(1, cursor_offset_start),  hl_preedit_bg },
-        { selected_section,                           hl_cursor_on_text },
-        { preedit_raw_text:sub(cursor_offset_end + 1), hl_preedit_bg },
+        { preedit_raw_text:sub(1, cursor_offset_start), hl_preedit_bg },
+        { selected_section,                             hl_cursor_on_text },
+        { preedit_raw_text:sub(cursor_offset_end + 1),  hl_preedit_bg },
       }
     else
       virt_text = {
         { preedit_raw_text:sub(1, cursor_offset_start), hl_preedit_bg },
-        { " ",                                       hl_cursor_tail },
+        { " ",                                          hl_cursor_tail },
       }
     end
 
@@ -275,24 +275,44 @@ M.commit_handler = function(commit_raw_text, commit_formatted_text)
 end
 
 ---Install the preedit and commit handlers to Neovide.
-M.install = function()
+M.setup = function()
   neovide.preedit_handler = M.preedit_handler
   neovide.commit_handler = M.commit_handler
 end
 
-local num_install_attempts = 0
-M.__deferred_install = function()
+local first_install_attempt = nil
+local install_attempts = 0
+if vim.g.neovime_install_timeout == nil then
+  vim.g.neovime_install_timeout = 10 -- seconds
+end
+M.__deferred_setup = function()
+  if first_install_attempt == nil then
+    first_install_attempt = vim.loop.hrtime()
+  end
   if _G["neovide"] == nil then
-    if num_install_attempts >= 10 then
-      -- Stop trying after 10 attempts.
-      vim.api.nvim_echo({{ "[neov-ime] `g:neovide` was set, but Neovide API is still not available. Aborting IME handler installation. Check :h neovime-install-timeout for details.", "WarningMsg" }}, true, {})
+    if (vim.loop.hrtime() - first_install_attempt) / 1e9 > vim.g.neovime_install_timeout then
+      vim.api.nvim_echo(
+        {
+          {
+            "[neov-ime] `g:neovide` was set, but Neovide API is still not available. Aborting IME handler installation. Check :h neov-ime-troubleshooting for details.",
+            "ErrorMsg"
+          }
+        },
+        true,
+        {}
+      )
       return
     end
-    -- We want to install the hanlers as soon as possible so we keep trying until success.
-    vim.schedule(M.__deferred_install)
+    install_attempts = install_attempts + 1
+    if install_attempts <= 10 then
+      -- Try to install immediately for the first 10 attempts.
+      vim.schedule(M.__deferred_setup)
+    else
+      -- After that, try to install every 100ms.
+      vim.defer_fn(M.__deferred_setup, 100)
+    end
     return
   end
-  num_install_attempts = num_install_attempts + 1
   M.install()
 end
 

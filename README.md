@@ -1,4 +1,4 @@
-# neov-ime.nvim
+# neov-ime.nvim _neovime_
 
 https://github.com/user-attachments/assets/e9fa8a06-6b5f-4edc-9c6b-b68ac7a66c63
 
@@ -19,10 +19,40 @@ call jetpack#add('sevenc-nanashi/neov-ime.nvim')
 
 ## Highlighting
 
-- `NeovImePreedit`（-> `Pmenu`）：The background for preedit text.
-- `NeovImePreeditCursor`（-> `PmenuSel`）：The color for following 2 highlights:
-- `NeovImePreeditCursorOnText`（-> `NeovImePreeditCursor`）： The part of preedit text under the cursor.
-- `NeovImePreeditCursorTail`（-> `NeovImePreeditCursor`）：The cursor at the end of preedit text.
+- `NeovImePreedit` (-> `Pmenu`): The background for preedit text.
+- `NeovImePreeditCursor` (-> `PmenuSel`): The color for following 2 highlights:
+- `NeovImePreeditCursorOnText` (-> `NeovImePreeditCursor`): The part of preedit text under the cursor.
+- `NeovImePreeditCursorTail` (-> `NeovImePreeditCursor`): The cursor at the end of preedit text.
+
+## Configuration
+
+You can prevent the plugin from installing IME handlers automatically by setting the global variable `g:neovime_manual_setup` to a truthy value before loading the plugin.
+In that case, you need to call the setup function manually:
+
+```lua
+require('neov-ime').setup()
+```
+
+Or more verbosely:
+
+```lua
+local neovime = require('neov-ime')
+neovide.preedit_handler = neovime.preedit_handler
+neovide.commit_handler = neovime.commit_handler
+```
+
+## Troubleshooting
+
+If you're getting this message:
+
+```
+[neov-ime] `g:neovide` was set, but Neovide API is still not available. Aborting IME handler installation. Check :h neovime-troubleshooting for details.
+```
+
+It means that the plugin couldn't access Neovide's API even though `g:neovide` was set.
+I believe this will not happen in normal situations, but if it does, you can try increasing the timeout duration by setting the global variable `g:neovime_install_timeout` (in seconds) before loading the plugin.
+The default value is `10` seconds.
+Or, you can disable the automatic installation of IME handlers by setting `g:neovime_manual_setup` to a truthy value, and call the setup function manually when you're sure that Neovide's API is available.
 
 ## Acknowledgements
 
