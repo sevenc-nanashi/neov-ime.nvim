@@ -1,6 +1,6 @@
 # neov-ime.nvim
 
-![Demo](./demo.mp4)
+<video src="./demo.mp4" />
 Neovim side implementation for Neovide's IME support.
 
 > [!WARNING]
