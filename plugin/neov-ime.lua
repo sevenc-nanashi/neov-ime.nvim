@@ -7,8 +7,8 @@ if vim.g.neovide == true then
 else
   vim.api.nvim_exec2(
     [[
-      function s:on_neovide_set()
-        if vim.g.neovide == true then
+      function! s:on_neovide_set(dict, key, value) abort
+        if g:neovide
           lua require("neov-ime").install()
           dictwatcherdel(g:, "neovide", function('s:on_neovide_set'))
         endif
