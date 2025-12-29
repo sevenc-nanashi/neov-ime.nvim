@@ -280,4 +280,20 @@ M.install = function()
   neovide.commit_handler = M.commit_handler
 end
 
+local num_install_attempts = 0
+M.__deferred_install = function()
+  if _G["neovide"] == nil then
+    if num_install_attempts >= 10 then
+      -- Stop trying after 10 attempts.
+      vim.api.nvim_echo({{ "[neov-ime] `g:neovide` was set, but Neovide API is still not available. Aborting IME handler installation. Check :h neovime-install-timeout for details.", "WarningMsg" }}, true, {})
+      return
+    end
+    -- We want to install the hanlers as soon as possible so we keep trying until success.
+    vim.schedule(M.__deferred_install)
+    return
+  end
+  num_install_attempts = num_install_attempts + 1
+  M.install()
+end
+
 return M

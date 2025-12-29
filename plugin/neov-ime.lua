@@ -4,13 +4,14 @@
 -- So we watch the variable instead of checking it once.
 if vim.g.neovide == true then
   require("neov-ime").install()
-else
+elseif vim.g.neovime_manual_init ~= true then
   vim.api.nvim_exec2(
     [[
       function! s:on_neovide_set(dict, key, value) abort
         if g:neovide
-          lua require("neov-ime").install()
-          dictwatcherdel(g:, "neovide", function('s:on_neovide_set'))
+          " Who wants to write lua in a vimscript function that is written inside a lua file...
+          lua require("neov-ime").__deferred_install()
+          call dictwatcherdel(g:, "neovide", function('s:on_neovide_set'))
         endif
       endfunction
       call dictwatcheradd(g:, "neovide", function('s:on_neovide_set'))
