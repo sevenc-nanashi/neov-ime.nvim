@@ -127,8 +127,9 @@ local function restore_guicursor()
 end
 
 ---@param preedit_raw_text string
----@param cursor_offset? [integer, integer] (start_col, end_col) This values
-local function preedit_handler_extmark(preedit_raw_text, cursor_offset)
+---@param cursor_offset_start integer
+---@param cursor_offset_end integer
+local function preedit_handler_extmark(preedit_raw_text, cursor_offset_start, cursor_offset_end)
   if ime_context.is_commited then
     ime_context.reset()
   end
@@ -141,13 +142,12 @@ local function preedit_handler_extmark(preedit_raw_text, cursor_offset)
   ime_context.preedit_text_offset = 0
   ime_context.entered_preedit_block = true
 
-  if preedit_raw_text ~= nil and preedit_raw_text ~= "" and cursor_offset ~= nil then
+  if preedit_raw_text ~= nil and preedit_raw_text ~= "" and cursor_offset_start ~= nil and cursor_offset_end ~= nil then
     -- Hide the original cursor because cursor will be drawn by the extmark
     hide_guicursor()
 
     -- Update the preedit text and cursor position if there is preedit text
-
-    ime_context.preedit_cursor_offset = cursor_offset[2]
+    ime_context.preedit_cursor_offset = cursor_offset_end
     ime_context.preedit_text_offset = string.len(preedit_raw_text)
 
     local buffer_id
@@ -158,13 +158,13 @@ local function preedit_handler_extmark(preedit_raw_text, cursor_offset)
     end
 
     local selected_section
-    if cursor_offset[1] == cursor_offset[2] then
-      -- To get selected character when cursor_offset[1] == cursor_offset[2]:
+    if cursor_offset_start == cursor_offset_end then
+      -- To get selected character when cursor is at a position (no selection):
       -- 1. Get the preedit text from the cursor end position to the last character.
       -- 2. Use vim.fn.slice to get the first character of the above text. (This handles multi-byte characters correctly)
-      selected_section = vim.fn.slice(preedit_raw_text:sub(cursor_offset[2] + 1), 0, 1)
+      selected_section = vim.fn.slice(preedit_raw_text:sub(cursor_offset_end + 1), 0, 1)
     else
-      selected_section = preedit_raw_text:sub(cursor_offset[1] + 1, cursor_offset[2])
+      selected_section = preedit_raw_text:sub(cursor_offset_start + 1, cursor_offset_end)
     end
 
     -- Set the highlight for the selected character
@@ -173,13 +173,13 @@ local function preedit_handler_extmark(preedit_raw_text, cursor_offset)
     local virt_text
     if selected_section ~= "" then
       virt_text = {
-        { preedit_raw_text:sub(1, cursor_offset[1]),  hl_preedit_bg },
+        { preedit_raw_text:sub(1, cursor_offset_start),  hl_preedit_bg },
         { selected_section,                           hl_cursor_on_text },
-        { preedit_raw_text:sub(cursor_offset[2] + 1), hl_preedit_bg },
+        { preedit_raw_text:sub(cursor_offset_end + 1), hl_preedit_bg },
       }
     else
       virt_text = {
-        { preedit_raw_text:sub(1, cursor_offset[1]), hl_preedit_bg },
+        { preedit_raw_text:sub(1, cursor_offset_start), hl_preedit_bg },
         { " ",                                       hl_cursor_tail },
       }
     end
@@ -230,8 +230,9 @@ vim.api.nvim_create_autocmd("BufLeave", {
 })
 
 ---@param preedit_raw_text string
----@param cursor_offset? [integer, integer] (start_col, end_col) This values show the cursor begin position and end position. The position is byte-wise indexed.
-M.preedit_handler = function(preedit_raw_text, cursor_offset)
+---@param cursor_offset_start integer
+---@param cursor_offset_end integer
+M.preedit_handler = function(preedit_raw_text, cursor_offset_start, cursor_offset_end)
   if vim.in_fast_event() then
     -- In fast event, skip the preedit handling.
     return
@@ -239,7 +240,7 @@ M.preedit_handler = function(preedit_raw_text, cursor_offset)
 
   -- Defer the preedit handling to run the extmark update in the main loop.
   vim.schedule(function()
-    preedit_handler_extmark(preedit_raw_text, cursor_offset)
+    preedit_handler_extmark(preedit_raw_text, cursor_offset_start, cursor_offset_end)
   end)
 end
 
@@ -247,7 +248,10 @@ local cleanup_schedule_nonce = 0
 
 ---@param commit_raw_text string
 ---@param commit_formatted_text string It's escaped.
-M.commit_handler = function(_commit_raw_text, commit_formatted_text)
+M.commit_handler = function(commit_raw_text, commit_formatted_text)
+  ---@diagnostic disable-next-line: unused-local
+  local _void = commit_raw_text
+
   if vim.in_fast_event() then
     -- In fast event, 99% of functions are not allowed, thus we defer the cleanup until the next main loop.
     vim.api.nvim_input(commit_formatted_text)
