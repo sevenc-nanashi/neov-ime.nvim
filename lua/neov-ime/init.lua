@@ -239,6 +239,7 @@ M.preedit_handler = function(preedit_raw_text, cursor_offset_start, cursor_offse
   end
 
   -- Defer the preedit handling to run the extmark update in the main loop.
+  -- TODO: Investigate why (I haven't understood how fast event works yet)
   vim.schedule(function()
     preedit_handler_extmark(preedit_raw_text, cursor_offset_start, cursor_offset_end)
   end)
