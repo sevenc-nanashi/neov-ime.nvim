@@ -19,7 +19,7 @@ Neovim side implementation for Neovide's IME support.
 	As of now, IME support is not available in stable releases of Neovide.
 	You need to build Neovide from source patch in this PR:
 	https://github.com/fredizzimo/neovide/pull/2
-
+<
 INSTALLATION					*neov-ime-installation*
 
 Use your favorite plugin manager to install neovime.nvim.
@@ -53,7 +53,7 @@ Or more verbosely:
 	local neovime = require('neov-ime')
 	neovide.preedit_handler = neovime.preedit_handler
 	neovide.commit_handler = neovime.commit_handler
-
+<
 TROUBLESHOOTING					*neov-ime-troubleshooting*
 
 If you're getting this message:
