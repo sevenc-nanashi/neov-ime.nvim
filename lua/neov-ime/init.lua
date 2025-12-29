@@ -116,7 +116,7 @@ local function hide_guicursor()
     return
   end
   previous_guicursor = vim.o.guicursor
-  vim.o.guicursor = "a:NeovImeHidden"
+  vim.o.guicursor = "a:" .. hl_hidden
 end
 local function restore_guicursor()
   if previous_guicursor == nil then
