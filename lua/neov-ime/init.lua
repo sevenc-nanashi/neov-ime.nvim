@@ -314,7 +314,7 @@ M.__deferred_setup = function()
     end
     return
   end
-  M.install()
+  M.setup()
 end
 
 return M
