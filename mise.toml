@@ -1,21 +1,15 @@
 [tools]
 ruby = "latest"
-stylua = "latest"
+"github:CppCXY/EmmyLuaCodeStyle" = { version = "latest", strip_components = 1, bin_path = "bin", filter_bins = "CodeFormat" }
 
 [tasks.update_neovim]
 description = "Download neovim repo"
-run = [
-    "rake update_neovim"
-]
+run = ["rake update_neovim"]
 
 [tasks.format]
 description = "Format code"
-run = [
-    "stylua ."
-]
+run = ["CodeFormat format -ow ."]
 
 [tasks.check_format]
 description = "Check code format"
-run = [
-    "stylua --check ."
-]
+run = ["CodeFormat check ."]
