@@ -1,0 +1,8 @@
+[tools]
+"github:Kampfkarren/selene" = "latest"
+
+[tasks.update_neovim]
+description = "Download neovim repo"
+run = [
+    "rake update_neovim"
+]
