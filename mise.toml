@@ -1,0 +1,9 @@
+[tools]
+"cargo:selene" = "latest"
+ruby = "latest"
+
+[tasks.update_neovim]
+description = "Download neovim repo"
+run = [
+    "rake update_neovim"
+]

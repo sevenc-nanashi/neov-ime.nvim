@@ -1,0 +1,3 @@
+# submodules forces plugin users to clone neovim, while neovim itself is not needed for plugin users.
+# Thus we don't use submodules, instead we use a script to clone neovim
+neovim

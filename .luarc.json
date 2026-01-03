@@ -1,0 +1,6 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "workspace.library": ["./external/neovim/runtime/lua/vim/_meta"],
+  "runtime.version": "LuaJIT",
+  "workspace.checkThirdParty": "Disable"
+}
