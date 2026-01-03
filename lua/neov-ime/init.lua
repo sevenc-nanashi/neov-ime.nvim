@@ -51,16 +51,10 @@ local ns_id = vim.api.nvim_create_namespace("neovide_ime_preedit_ns")
 
 ime_context.cleanup_extmark = function()
   if ime_context.extmark_state ~= nil then
-    vim.api.nvim_buf_del_extmark(
-      ime_context.extmark_state.buffer_id,
-      ns_id,
-      ime_context.extmark_state.extmark_id
-    )
+    vim.api.nvim_buf_del_extmark(ime_context.extmark_state.buffer_id, ns_id, ime_context.extmark_state.extmark_id)
   end
   ime_context.extmark_state = nil
 end
-
-
 
 ime_context.reset = function()
   ime_context.base_row, ime_context.base_col = 0, 0
@@ -83,17 +77,12 @@ ime_context.update_extmark_position = function(buffer_id, virt_text, extmark_id)
   ime_context.extmark_state = {
     buffer_id = buffer_id,
     virt_text = virt_text,
-    extmark_id = vim.api.nvim_buf_set_extmark(
-      buffer_id,
-      ns_id,
-      ime_context.base_row - 1, ime_context.base_col,
-      {
-        id = extmark_id,
-        virt_text = virt_text,
-        virt_text_pos = "overlay",
-        hl_mode = "combine",
-      }
-    )
+    extmark_id = vim.api.nvim_buf_set_extmark(buffer_id, ns_id, ime_context.base_row - 1, ime_context.base_col, {
+      id = extmark_id,
+      virt_text = virt_text,
+      virt_text_pos = "overlay",
+      hl_mode = "combine",
+    }),
   }
 end
 
@@ -107,7 +96,6 @@ local function get_position_under_cursor(window_id)
   local row, col = unpack(vim.api.nvim_win_get_cursor(win_id))
   return row, col
 end
-
 
 local previous_guicursor = nil
 
@@ -184,11 +172,7 @@ local function preedit_handler_extmark(preedit_raw_text, cursor_offset_start, cu
       }
     end
 
-    ime_context.update_extmark_position(
-      buffer_id,
-      virt_text,
-      nil
-    )
+    ime_context.update_extmark_position(buffer_id, virt_text, nil)
   else
     -- Clear the preedit text and reset the cursor position if there is no preedit text
     ime_context.entered_preedit_block = false
@@ -197,7 +181,6 @@ local function preedit_handler_extmark(preedit_raw_text, cursor_offset_start, cu
     vim.api.nvim_win_set_cursor(0, { ime_context.base_row, ime_context.base_col })
   end
 end
-
 
 local group_name = "ImePreeditMoveExtMark"
 vim.api.nvim_create_augroup(group_name, { clear = true })
@@ -215,7 +198,7 @@ vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI", "TextChangedT" }, {
 
       ime_context.update_extmark_position()
     end
-  end
+  end,
 })
 vim.api.nvim_create_autocmd("BufLeave", {
   group = group_name,
@@ -226,7 +209,7 @@ vim.api.nvim_create_autocmd("BufLeave", {
       ime_context.cleanup_extmark()
       restore_guicursor()
     end
-  end
+  end,
 })
 
 ---@param preedit_raw_text string
@@ -292,16 +275,12 @@ M.__deferred_setup = function()
   end
   if _G["neovide"] == nil then
     if (vim.loop.hrtime() - first_install_attempt) / 1e9 > vim.g.neovime_install_timeout then
-      vim.api.nvim_echo(
+      vim.api.nvim_echo({
         {
-          {
-            "[neov-ime] `g:neovide` was set, but Neovide API is still not available. Aborting IME handler installation. Check :h neov-ime-troubleshooting for details.",
-            "ErrorMsg"
-          }
+          "[neov-ime] `g:neovide` was set, but Neovide API is still not available. Aborting IME handler installation. Check :h neov-ime-troubleshooting for details.",
+          "ErrorMsg",
         },
-        true,
-        {}
-      )
+      }, true, {})
       return
     end
     install_attempts = install_attempts + 1
