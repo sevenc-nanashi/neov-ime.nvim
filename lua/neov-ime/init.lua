@@ -1,14 +1,10 @@
 local M = {}
 
 local hl_preedit_bg = "NeovImePreedit"
-local hl_cursor = "NeovImePreeditCursor"
-local hl_cursor_on_text = "NeovImeOverlayCursorOnText"
-local hl_cursor_tail = "NeovImePreeditCursorTail"
+local hl_selected = "NeovImePreeditSelected"
 local hl_hidden = "NeovImeHidden"
 vim.api.nvim_set_hl(0, hl_preedit_bg, { link = "Pmenu", default = true })
-vim.api.nvim_set_hl(0, hl_cursor, { link = "PmenuSel", default = true })
-vim.api.nvim_set_hl(0, hl_cursor_on_text, { link = hl_cursor, default = true })
-vim.api.nvim_set_hl(0, hl_cursor_tail, { link = hl_cursor, default = true })
+vim.api.nvim_set_hl(0, hl_selected, { link = "PmenuSel", default = true })
 
 -- Hidden highlight group for hiding the original cursor during preedit;
 -- Do not override this highlight group in your config.
@@ -23,20 +19,12 @@ vim.api.nvim_set_hl(0, hl_hidden, { blend = 100, default = true })
 ---@field preedit_text_offset integer The length in bytes of the preedit text.
 ---@field extmark_state? ImeExtmarkState
 
----@class ImePreeditData
----@field preedit_raw_text string
----@field cursor_offset? [integer, integer] (start_col, end_col) This values show the cursor begin position and end position. The position is byte-wise indexed.
-
----@class ImeCommitData
----@field commit_raw_text string
----@field commit_formatted_text string It's escaped.
-
 ---@class ImeExtmarkState
 ---@field virt_text {[1]: string, [2]: string}[]
 ---@field buffer_id integer
----@field extmark_id integer
+---@field extmark_id integer|nil
 
----@type ImeContext
+---@class ImeContext
 local ime_context = {
   entered_preedit_block = false,
   is_commited = false,
@@ -65,24 +53,60 @@ ime_context.reset = function()
   ime_context.cleanup_extmark()
 end
 
+---@param offset_row integer|nil
+---@param offset_col integer|nil
+ime_context.update_cursor_position = function(
+    offset_row, offset_col
+)
+  offset_row = offset_row or 0
+  offset_col = offset_col or 0
+  -- Move the Neovide cursor to the correct position
+  local window_row, window_col = unpack(vim.api.nvim_win_get_position(0))
+  local cursor_row_in_window = vim.fn.screenrow()
+  local cursor_col_in_window = vim.fn.screencol()
+  vim.rpcnotify(vim.g.neovide_channel_id, "redraw", {
+    "grid_cursor_goto",
+    { 1, -- TODO: is using grid 1 always correct?
+      window_row + cursor_row_in_window - 1 + offset_row,
+      window_col + cursor_col_in_window - 1 + offset_col
+    }
+  })
+end
+
+---Set the extmark position
 ---@param buffer_id integer|nil if not set, set current buffer id
 ---@param virt_text {[1]: string, [2]: string}[]|nil if not set, use last virt_text
----@param extmark_id integer|nil if not set, use last extmark_id
-ime_context.update_extmark_position = function(buffer_id, virt_text, extmark_id)
-  if ime_context.extmark_state ~= nil then
-    buffer_id = buffer_id or ime_context.extmark_state.buffer_id
-    virt_text = virt_text or ime_context.extmark_state.virt_text
-    extmark_id = extmark_id or ime_context.extmark_state.extmark_id
+-- @param extmark_id integer|nil if not set, use last extmark_id
+ime_context.set_extmark_position = function(buffer_id, virt_text, extmark_id)
+  if ime_context.extmark_state == nil then
+    ime_context.extmark_state = {
+      buffer_id = vim.api.nvim_get_current_buf(),
+      virt_text = {},
+      extmark_id = nil,
+    }
   end
+  ime_context.extmark_state.buffer_id = buffer_id or ime_context.extmark_state.buffer_id
+  ime_context.extmark_state.virt_text = virt_text or ime_context.extmark_state.virt_text
+  ime_context.extmark_state.extmark_id = extmark_id or ime_context.extmark_state.extmark_id
+  ime_context.update_extmark_position()
+end
+
+----Update the extmark position to the current base_row and base_col
+ime_context.update_extmark_position = function()
   ime_context.extmark_state = {
-    buffer_id = buffer_id,
-    virt_text = virt_text,
-    extmark_id = vim.api.nvim_buf_set_extmark(buffer_id, ns_id, ime_context.base_row - 1, ime_context.base_col, {
-      id = extmark_id,
-      virt_text = virt_text,
-      virt_text_pos = "overlay",
-      hl_mode = "combine",
-    }),
+    buffer_id = ime_context.extmark_state.buffer_id,
+    virt_text = ime_context.extmark_state.virt_text,
+    extmark_id = vim.api.nvim_buf_set_extmark(
+      ime_context.extmark_state.buffer_id,
+      ns_id,
+      ime_context.base_row - 1, ime_context.base_col,
+      {
+        id = ime_context.extmark_state.extmark_id,
+        virt_text = ime_context.extmark_state.virt_text,
+        virt_text_pos = "overlay",
+        hl_mode = "combine",
+      }
+    )
   }
 end
 
@@ -118,6 +142,7 @@ end
 ---@param cursor_offset_start integer
 ---@param cursor_offset_end integer
 local function preedit_handler_extmark(preedit_raw_text, cursor_offset_start, cursor_offset_end)
+  -- NOTE: cursor_offset_start and cursor_offset_end are in bytes, and are both inclusive.
   if ime_context.is_commited then
     ime_context.reset()
   end
@@ -131,9 +156,6 @@ local function preedit_handler_extmark(preedit_raw_text, cursor_offset_start, cu
   ime_context.entered_preedit_block = true
 
   if preedit_raw_text ~= nil and preedit_raw_text ~= "" and cursor_offset_start ~= nil and cursor_offset_end ~= nil then
-    -- Hide the original cursor because cursor will be drawn by the extmark
-    hide_guicursor()
-
     -- Update the preedit text and cursor position if there is preedit text
     ime_context.preedit_cursor_offset = cursor_offset_end
     ime_context.preedit_text_offset = string.len(preedit_raw_text)
@@ -145,37 +167,45 @@ local function preedit_handler_extmark(preedit_raw_text, cursor_offset_start, cu
       buffer_id = vim.api.nvim_get_current_buf()
     end
 
-    local selected_section
-    if cursor_offset_start == cursor_offset_end then
-      -- To get selected character when cursor is at a position (no selection):
-      -- 1. Get the preedit text from the cursor end position to the last character.
-      -- 2. Use vim.fn.slice to get the first character of the above text. (This handles multi-byte characters correctly)
-      selected_section = vim.fn.slice(preedit_raw_text:sub(cursor_offset_end + 1), 0, 1)
-    else
-      selected_section = preedit_raw_text:sub(cursor_offset_start + 1, cursor_offset_end)
-    end
-
     -- Set the highlight for the selected character
-    -- If the cursor is at the end of the preedit text (selected_char is empty), append a space and highlight it.
-    -- If not, highlight the selected character.
     local virt_text
-    if selected_section ~= "" then
+    -- If the cursor is at the end of the preedit text, there will be no selected section
+    if cursor_offset_start == #preedit_raw_text then
+      -- TODO: respect user's configs and use the cursor shape that is used in insert mode
+      restore_guicursor()
+
       virt_text = {
         { preedit_raw_text:sub(1, cursor_offset_start), hl_preedit_bg },
-        { selected_section,                             hl_cursor_on_text },
-        { preedit_raw_text:sub(cursor_offset_end + 1),  hl_preedit_bg },
       }
+
+      ime_context.update_cursor_position(0,
+        vim.fn.strdisplaywidth(preedit_raw_text))
     else
+      hide_guicursor()
+      -- vim.fn.slice handles multibyte characters correctly so we use it to get the "last character" on cursor end
+      local byte_size_at_cursor_end = #vim.fn.slice(preedit_raw_text:sub(cursor_offset_end + 1), 0, 1)
+
+      -- NOTE: string.sub uses 1-indexed positions, while cursor_offset_start and cursor_offset_end are 0-indexed.
       virt_text = {
-        { preedit_raw_text:sub(1, cursor_offset_start), hl_preedit_bg },
-        { " ",                                          hl_cursor_tail },
+        { preedit_raw_text:sub(1, cursor_offset_start),                                               hl_preedit_bg },
+        { preedit_raw_text:sub(cursor_offset_start + 1, cursor_offset_end + byte_size_at_cursor_end), hl_selected },
+        { preedit_raw_text:sub(cursor_offset_end + byte_size_at_cursor_end + 1),                      hl_preedit_bg }
       }
+
+      -- as we cannot get where the cursor is, we use the last highlighted position as the cursor position
+      ime_context.update_cursor_position(0,
+        vim.fn.strdisplaywidth(preedit_raw_text:sub(1, cursor_offset_end + byte_size_at_cursor_end)))
     end
 
-    ime_context.update_extmark_position(buffer_id, virt_text, nil)
+    ime_context.set_extmark_position(
+      buffer_id,
+      virt_text,
+      nil
+    )
   else
     -- Clear the preedit text and reset the cursor position if there is no preedit text
     ime_context.entered_preedit_block = false
+    ime_context.update_cursor_position()
     ime_context.cleanup_extmark()
     restore_guicursor()
     vim.api.nvim_win_set_cursor(0, { ime_context.base_row, ime_context.base_col })
@@ -196,6 +226,7 @@ vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI", "TextChangedT" }, {
       ime_context.base_row = row
       ime_context.base_col = col
 
+      ime_context.update_cursor_position()
       ime_context.update_extmark_position()
     end
   end,
@@ -206,6 +237,7 @@ vim.api.nvim_create_autocmd("BufLeave", {
     if ime_context.entered_preedit_block and ime_context.extmark_state ~= nil then
       -- Clear the preedit text and reset the cursor position if the buffer is left during preedit
       ime_context.entered_preedit_block = false
+      ime_context.update_cursor_position()
       ime_context.cleanup_extmark()
       restore_guicursor()
     end
@@ -240,6 +272,9 @@ M.commit_handler = function(commit_raw_text, commit_formatted_text)
     -- In fast event, 99% of functions are not allowed, thus we defer the cleanup until the next main loop.
     vim.api.nvim_input(commit_formatted_text)
     cleanup_schedule_nonce = cleanup_schedule_nonce + 1
+    -- as rpc itself is fast, we can update the cursor position immediately
+    ime_context.update_cursor_position()
+
     local my_nonce = cleanup_schedule_nonce
     vim.schedule(function()
       if my_nonce ~= cleanup_schedule_nonce then
@@ -251,6 +286,7 @@ M.commit_handler = function(commit_raw_text, commit_formatted_text)
     end)
   else
     vim.api.nvim_input(commit_formatted_text)
+    ime_context.update_cursor_position()
     ime_context.cleanup_extmark()
     restore_guicursor()
   end
@@ -260,7 +296,9 @@ end
 
 ---Install the preedit and commit handlers to Neovide.
 M.setup = function()
+  ---@diagnostic disable-next-line: undefined-global
   neovide.preedit_handler = M.preedit_handler
+  ---@diagnostic disable-next-line: undefined-global
   neovide.commit_handler = M.commit_handler
 end
 
