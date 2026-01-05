@@ -1,6 +1,10 @@
 [tools]
 ruby = "latest"
 "github:CppCXY/EmmyLuaCodeStyle" = { version = "latest", strip_components = 1, bin_path = "bin", filter_bins = "CodeFormat" }
+"npm:lefthook" = "latest"
+
+[hooks]
+postinstall = ["lefthook install", "bundle", "rake update_neovim"]
 
 [tasks.update_neovim]
 description = "Download neovim repo"
