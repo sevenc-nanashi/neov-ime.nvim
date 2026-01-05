@@ -8,8 +8,8 @@ run = ["rake update_neovim"]
 
 [tasks.format]
 description = "Format code"
-run = ["CodeFormat format -ow ."]
+run = ["CodeFormat format -d -ow ."]
 
 [tasks.check_format]
 description = "Check code format"
-run = ["CodeFormat check ."]
+run = ["CodeFormat check -d ."]
