@@ -309,10 +309,10 @@ if vim.g.neovime_install_timeout == nil then
 end
 M.__deferred_setup = function()
   if first_install_attempt == nil then
-    first_install_attempt = vim.loop.hrtime()
+    first_install_attempt = vim.uv.hrtime()
   end
   if _G["neovide"] == nil then
-    if (vim.loop.hrtime() - first_install_attempt) / 1e9 > vim.g.neovime_install_timeout then
+    if (vim.uv.hrtime() - first_install_attempt) / 1e9 > vim.g.neovime_install_timeout then
       vim.api.nvim_echo({
         {
           "[neov-ime] `g:neovide` was set, but Neovide API is still not available. Aborting IME handler installation. Check :h neov-ime-troubleshooting for details.",
