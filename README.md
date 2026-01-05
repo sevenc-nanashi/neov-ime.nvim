@@ -20,9 +20,7 @@ call jetpack#add('sevenc-nanashi/neov-ime.nvim')
 ## Highlighting
 
 - `NeovImePreedit` (-> `Pmenu`): The background for preedit text.
-- `NeovImePreeditCursor` (-> `PmenuSel`): The color for following 2 highlights:
-- `NeovImePreeditCursorOnText` (-> `NeovImePreeditCursor`): The part of preedit text under the cursor.
-- `NeovImePreeditCursorTail` (-> `NeovImePreeditCursor`): The cursor at the end of preedit text.
+- `NeovImePreeditSelected` (-> `PmenuSel`): The part of preedit text under the cursor.
 
 ## Configuration
 
