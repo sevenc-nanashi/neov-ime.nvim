@@ -1,0 +1,7 @@
+pre-push:
+  fail_on_changes: "always"
+  parallel: true
+  only:
+    - ref: main
+  jobs:
+    - run: mise run check_format
