@@ -60,15 +60,21 @@ ime_context.update_cursor_position = function(
 )
   offset_row = offset_row or 0
   offset_col = offset_col or 0
+
   -- Move the Neovide cursor to the correct position
   local window_row, window_col = unpack(vim.api.nvim_win_get_position(0))
+  -- NOTE: due to Neoide's multigrid support, `screenrow` and `screencol` return the cursor position
+  -- from the top-left corner of the window, not the entire screen.
   local cursor_row_in_window = vim.fn.screenrow()
   local cursor_col_in_window = vim.fn.screencol()
+  local cursor_screen_row = window_row + cursor_row_in_window - 1
+  local cursor_screen_col = window_col + cursor_col_in_window - 1
+
   vim.rpcnotify(vim.g.neovide_channel_id, "redraw", {
     "grid_cursor_goto",
     { 1, -- TODO: is using grid 1 always correct?
-      window_row + cursor_row_in_window - 1 + offset_row,
-      window_col + cursor_col_in_window - 1 + offset_col
+      cursor_screen_row + offset_row,
+      cursor_screen_col + offset_col
     }
   })
 end
