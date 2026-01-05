@@ -65,6 +65,7 @@ ime_context.update_cursor_position = function(
   local window_row, window_col = unpack(vim.api.nvim_win_get_position(0))
   -- NOTE: due to Neoide's multigrid support, `screenrow` and `screencol` return the cursor position
   -- from the top-left corner of the window, not the entire screen.
+  -- TODO: handle --no-multigrid case
   local cursor_row_in_window = vim.fn.screenrow()
   local cursor_col_in_window = vim.fn.screencol()
   local cursor_screen_row = window_row + cursor_row_in_window - 1
