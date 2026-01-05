@@ -49,7 +49,7 @@ local ime_context = {
 
 local ns_id = vim.api.nvim_create_namespace("neovide_ime_preedit_ns")
 
-ime_context.cleanup_extmark = function()
+function ime_context.cleanup_extmark()
   if ime_context.extmark_state ~= nil then
     vim.api.nvim_buf_del_extmark(ime_context.extmark_state.buffer_id, ns_id, ime_context.extmark_state.extmark_id)
   end
@@ -67,7 +67,7 @@ end
 
 ---@param buffer_id integer|nil if not set, set current buffer id
 ---@param virt_text {[1]: string, [2]: string}[]|nil if not set, use last virt_text
--- @param extmark_id integer|nil if not set, use last extmark_id
+---@param extmark_id integer|nil if not set, use last extmark_id
 ime_context.update_extmark_position = function(buffer_id, virt_text, extmark_id)
   if ime_context.extmark_state ~= nil then
     buffer_id = buffer_id or ime_context.extmark_state.buffer_id
