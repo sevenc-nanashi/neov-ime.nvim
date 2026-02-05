@@ -9,11 +9,11 @@ local function check_version()
   local required_major = 0
   local required_minor = 12
   local required_patch = 0
-  local required_prerelease = "dev-1724"
+  local required_build = 1724
 
   local current = vim.version()
   
-  -- Compare major.minor.patch
+  -- Compare major version
   if current.major < required_major then
     M._show_version_warning()
     return
@@ -21,6 +21,7 @@ local function check_version()
     return
   end
 
+  -- Compare minor version
   if current.minor < required_minor then
     M._show_version_warning()
     return
@@ -28,6 +29,7 @@ local function check_version()
     return
   end
 
+  -- Compare patch version
   if current.patch < required_patch then
     M._show_version_warning()
     return
@@ -35,11 +37,15 @@ local function check_version()
     return
   end
 
-  -- If we're at exactly 0.12.0, check the prerelease version
-  -- For dev versions, the prerelease field contains "dev+<build_number>"
+  -- At this point, we're at exactly 0.12.0
+  -- If it's a stable release (no prerelease), it's fine
+  -- If it's a dev release, check the build number
   if current.prerelease then
     local build_num = tonumber(current.prerelease:match("dev%-(%d+)"))
-    if build_num and build_num < 1724 then
+    if build_num and build_num < required_build then
+      M._show_version_warning()
+    elseif not build_num then
+      -- It's a prerelease but not in dev-XXXX format, warn to be safe
       M._show_version_warning()
     end
   end
