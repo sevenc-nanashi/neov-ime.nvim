@@ -7,7 +7,7 @@ Neovim side implementation for Neovide's IME support.
 > [!WARNING]
 > This plugin only works with Neovide with IME support enabled.
 > As of now, IME support is not available in stable releases of Neovide.
-> You need to build Neovide from source on [this PR](https://github.com/neovide/neovide/pull/3221).
+> You need to build Neovide from source latter than commit `91f8b8d` (2026/02/05).
 
 ## Installation
 
@@ -23,6 +23,23 @@ call jetpack#add('sevenc-nanashi/neov-ime.nvim')
 - `NeovImePreeditSelected` (-> `PmenuSel`): The part of preedit text under the cursor.
 
 ## Configuration
+
+### Version Check
+
+The plugin checks if your Neovim version meets the minimum requirement (0.12.0-dev-1724 or later) and displays a warning if it's too old.
+You can suppress this warning by setting the global variable `g:neovime_no_version_warning` to a truthy value before loading the plugin:
+
+```vim
+let g:neovime_no_version_warning = 1
+```
+
+Or in Lua:
+
+```lua
+vim.g.neovime_no_version_warning = true
+```
+
+### Manual Setup
 
 You can prevent the plugin from installing IME handlers automatically by setting the global variable `g:neovime_manual_setup` to a truthy value before loading the plugin.
 In that case, you need to call the setup function manually:

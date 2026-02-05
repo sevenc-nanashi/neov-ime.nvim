@@ -1,5 +1,88 @@
 local M = {}
 
+-- Check if Neovim version meets minimum requirements
+local function check_version()
+  if vim.g.neovime_no_version_warning then
+    return
+  end
+
+  local required_major = 0
+  local required_minor = 12
+  local required_patch = 0
+  local required_build = 1724
+
+  local current = vim.version()
+
+  -- Compare major version
+  if current.major < required_major then
+    M._show_version_warning()
+    return
+  elseif current.major > required_major then
+    return
+  end
+
+  -- Compare minor version
+  if current.minor < required_minor then
+    M._show_version_warning()
+    return
+  elseif current.minor > required_minor then
+    return
+  end
+
+  -- Compare patch version
+  if current.patch < required_patch then
+    M._show_version_warning()
+    return
+  elseif current.patch > required_patch then
+    return
+  end
+
+  -- At this point, we're at exactly 0.12.0
+  -- If it's a stable release (no prerelease), it's fine
+  -- If it's a dev release, check the build number
+  if current.prerelease then
+    -- TODO: Replace this with a better way when Neovim API provides build number directly
+    -- vim.version().prerelease only contains "dev", not the build number
+    -- We need to parse the output of :version to get the actual build number
+    local ok, result = pcall(vim.api.nvim_exec2, "version", { output = true })
+    if ok and result.output then
+      -- Parse version string like "NVIM v0.12.0-dev-1724+g91f8b8d"
+      local version_line = result.output:match("NVIM v[^\n]+")
+      if version_line then
+        local build_num = tonumber(version_line:match("dev%-(%d+)"))
+        if build_num and build_num < required_build then
+          M._show_version_warning()
+          return
+        elseif build_num then
+          -- Build number is sufficient, no warning needed
+          return
+        end
+      end
+    end
+    -- If we couldn't parse the build number, warn to be safe
+    M._show_version_warning()
+  end
+end
+
+M._show_version_warning = function()
+  vim.api.nvim_echo({
+    { "[neov-ime] Warning: ", "WarningMsg" },
+    {
+      "Your Neovim version is too old. At least 0.12.0-dev-1724 is required. ",
+      "Normal"
+    },
+    {
+      "Set g:neovime_no_version_warning to suppress this warning.",
+      "Comment"
+    },
+  }, true, {})
+end
+
+local function num_bytes_at_byte_index(str, byte_index)
+  -- vim.fn.slice handles multi-byte characters correctly, so we can use it to get the number of bytes of the character at the given byte index.
+  return #vim.fn.slice(str:sub(byte_index + 1), 0, 1)
+end
+
 local hl_preedit_bg = "NeovImePreedit"
 local hl_selected = "NeovImePreeditSelected"
 local hl_hidden = "NeovImeHidden"
@@ -303,6 +386,8 @@ end
 
 ---Install the preedit and commit handlers to Neovide.
 M.setup = function()
+  check_version()
+
   ---@diagnostic disable-next-line: undefined-global
   neovide.preedit_handler = M.preedit_handler
   ---@diagnostic disable-next-line: undefined-global
