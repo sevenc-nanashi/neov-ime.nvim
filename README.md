@@ -26,6 +26,23 @@ call jetpack#add('sevenc-nanashi/neov-ime.nvim')
 
 ## Configuration
 
+### Version Check
+
+The plugin checks if your Neovim version meets the minimum requirement (0.12.0-dev-1724 or later) and displays a warning if it's too old.
+You can suppress this warning by setting the global variable `g:neovime_no_version_warning` to a truthy value before loading the plugin:
+
+```vim
+let g:neovime_no_version_warning = 1
+```
+
+Or in Lua:
+
+```lua
+vim.g.neovime_no_version_warning = true
+```
+
+### Manual Setup
+
 You can prevent the plugin from installing IME handlers automatically by setting the global variable `g:neovime_manual_setup` to a truthy value before loading the plugin.
 In that case, you need to call the setup function manually:
 
