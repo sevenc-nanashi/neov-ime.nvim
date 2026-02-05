@@ -12,7 +12,7 @@ local function check_version()
   local required_build = 1724
 
   local current = vim.version()
-  
+
   -- Compare major version
   if current.major < required_major then
     M._show_version_warning()
