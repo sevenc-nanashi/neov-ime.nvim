@@ -41,13 +41,26 @@ local function check_version()
   -- If it's a stable release (no prerelease), it's fine
   -- If it's a dev release, check the build number
   if current.prerelease then
-    local build_num = tonumber(current.prerelease:match("dev%-(%d+)"))
-    if build_num and build_num < required_build then
-      M._show_version_warning()
-    elseif not build_num then
-      -- It's a prerelease but not in dev-XXXX format, warn to be safe
-      M._show_version_warning()
+    -- TODO: Replace this with a better way when Neovim API provides build number directly
+    -- vim.version().prerelease only contains "dev", not the build number
+    -- We need to parse the output of :version to get the actual build number
+    local ok, result = pcall(vim.api.nvim_exec2, "version", { output = true })
+    if ok and result.output then
+      -- Parse version string like "NVIM v0.12.0-dev-1724+g91f8b8d"
+      local version_line = result.output:match("NVIM v[^\n]+")
+      if version_line then
+        local build_num = tonumber(version_line:match("dev%-(%d+)"))
+        if build_num and build_num < required_build then
+          M._show_version_warning()
+          return
+        elseif build_num then
+          -- Build number is sufficient, no warning needed
+          return
+        end
+      end
     end
+    -- If we couldn't parse the build number, warn to be safe
+    M._show_version_warning()
   end
 end
 
