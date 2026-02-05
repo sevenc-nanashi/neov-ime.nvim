@@ -1,5 +1,10 @@
 local M = {}
 
+local function num_bytes_at_byte_index(str, byte_index)
+  -- vim.fn.slice handles multi-byte characters correctly, so we can use it to get the number of bytes of the character at the given byte index.
+  return #vim.fn.slice(str:sub(byte_index + 1), 0, 1)
+end
+
 local hl_preedit_bg = "NeovImePreedit"
 local hl_cursor = "NeovImePreeditCursor"
 local hl_cursor_on_text = "NeovImeOverlayCursorOnText"
@@ -145,30 +150,25 @@ local function preedit_handler_extmark(preedit_raw_text, cursor_offset_start, cu
       buffer_id = vim.api.nvim_get_current_buf()
     end
 
-    local selected_section
-    if cursor_offset_start == cursor_offset_end then
-      -- To get selected character when cursor is at a position (no selection):
-      -- 1. Get the preedit text from the cursor end position to the last character.
-      -- 2. Use vim.fn.slice to get the first character of the above text. (This handles multi-byte characters correctly)
-      selected_section = vim.fn.slice(preedit_raw_text:sub(cursor_offset_end + 1), 0, 1)
-    else
-      selected_section = preedit_raw_text:sub(cursor_offset_start + 1, cursor_offset_end)
-    end
-
     -- Set the highlight for the selected character
-    -- If the cursor is at the end of the preedit text (selected_char is empty), append a space and highlight it.
+    -- If the cursor is at the end of the preedit text, append a space and highlight it.
     -- If not, highlight the selected character.
     local virt_text
-    if selected_section ~= "" then
-      virt_text = {
-        { preedit_raw_text:sub(1, cursor_offset_start), hl_preedit_bg },
-        { selected_section,                             hl_cursor_on_text },
-        { preedit_raw_text:sub(cursor_offset_end + 1),  hl_preedit_bg },
-      }
-    else
+    if cursor_offset_end == #preedit_raw_text then
       virt_text = {
         { preedit_raw_text:sub(1, cursor_offset_start), hl_preedit_bg },
         { " ",                                          hl_cursor_tail },
+      }
+    else
+      local char_after_end_index = cursor_offset_end + num_bytes_at_byte_index(preedit_raw_text, cursor_offset_end)
+      virt_text = {
+        { preedit_raw_text:sub(1, cursor_offset_start),   hl_preedit_bg },
+        {
+          preedit_raw_text:sub(
+            cursor_offset_start + 1, char_after_end_index
+          ),
+          hl_cursor_on_text },
+        { preedit_raw_text:sub(char_after_end_index + 1), hl_preedit_bg }
       }
     end
 
