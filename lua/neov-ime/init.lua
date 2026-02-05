@@ -1,5 +1,64 @@
 local M = {}
 
+-- Check if Neovim version meets minimum requirements
+local function check_version()
+  if vim.g.neovime_no_version_warning then
+    return
+  end
+
+  local required_major = 0
+  local required_minor = 12
+  local required_patch = 0
+  local required_prerelease = "dev-1724"
+
+  local current = vim.version()
+  
+  -- Compare major.minor.patch
+  if current.major < required_major then
+    M._show_version_warning()
+    return
+  elseif current.major > required_major then
+    return
+  end
+
+  if current.minor < required_minor then
+    M._show_version_warning()
+    return
+  elseif current.minor > required_minor then
+    return
+  end
+
+  if current.patch < required_patch then
+    M._show_version_warning()
+    return
+  elseif current.patch > required_patch then
+    return
+  end
+
+  -- If we're at exactly 0.12.0, check the prerelease version
+  -- For dev versions, the prerelease field contains "dev+<build_number>"
+  if current.prerelease then
+    local build_num = tonumber(current.prerelease:match("dev%-(%d+)"))
+    if build_num and build_num < 1724 then
+      M._show_version_warning()
+    end
+  end
+end
+
+M._show_version_warning = function()
+  vim.api.nvim_echo({
+    { "[neov-ime] Warning: ", "WarningMsg" },
+    {
+      "Your Neovim version is too old. At least 0.12.0-dev-1724 is required. ",
+      "Normal"
+    },
+    {
+      "Set g:neovime_no_version_warning to suppress this warning.",
+      "Comment"
+    },
+  }, true, {})
+end
+
 local function num_bytes_at_byte_index(str, byte_index)
   -- vim.fn.slice handles multi-byte characters correctly, so we can use it to get the number of bytes of the character at the given byte index.
   return #vim.fn.slice(str:sub(byte_index + 1), 0, 1)
@@ -260,6 +319,7 @@ end
 
 ---Install the preedit and commit handlers to Neovide.
 M.setup = function()
+  check_version()
   neovide.preedit_handler = M.preedit_handler
   neovide.commit_handler = M.commit_handler
 end
