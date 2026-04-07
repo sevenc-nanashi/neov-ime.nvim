@@ -5,9 +5,7 @@ https://github.com/user-attachments/assets/e9fa8a06-6b5f-4edc-9c6b-b68ac7a66c63
 Neovim side implementation for Neovide's IME support.
 
 > [!WARNING]
-> This plugin only works with Neovide with IME support enabled.
-> As of now, IME support is not available in stable releases of Neovide.
-> You need to build Neovide from source latter than commit `91f8b8d` (2026/02/05).
+> This plugin only works with Neovide 0.16.0.
 
 ## Installation
 

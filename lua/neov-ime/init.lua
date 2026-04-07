@@ -146,9 +146,7 @@ ime_context.update_cursor_position = function(
 
   -- Move the Neovide cursor to the correct position
 
-  -- NOTE: due to Neovide's multigrid support, `screenrow` and `screencol` return the cursor position
-  -- from the top-left corner of the window, not the entire screen.
-  -- TODO: is it bug of Neovim? or multigrid's expected behavior?
+  -- NOTE: on multigrid environment, screenrow and screencol are relative to current split. (Neovim issue: https://github.com/neovim/neovim/issues/15754 )
   -- TODO: handle --no-multigrid case
   local window_row, window_col = unpack(vim.api.nvim_win_get_position(0))
   local cursor_row_in_window = vim.fn.screenrow()
