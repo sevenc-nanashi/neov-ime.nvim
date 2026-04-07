@@ -5,9 +5,7 @@ https://github.com/user-attachments/assets/e9fa8a06-6b5f-4edc-9c6b-b68ac7a66c63
 Neovim side implementation for Neovide's IME support.
 
 > [!WARNING]
-> This plugin only works with Neovide with IME support enabled.
-> As of now, IME support is not available in stable releases of Neovide.
-> You need [Nightly Neovide](https://github.com/neovide/neovide/releases/tag/nightly) latter than commit `91f8b8d` (2026/02/05).
+> This plugin requires Neovide 0.16.0 or later, and Neovim 0.12.0 or later.
 
 ## Installation
 
@@ -20,9 +18,7 @@ call jetpack#add('sevenc-nanashi/neov-ime.nvim')
 ## Highlighting
 
 - `NeovImePreedit` (-> `Pmenu`): The background for preedit text.
-- `NeovImePreeditCursor` (-> `PmenuSel`): The color for following 2 highlights:
-- `NeovImePreeditCursorOnText` (-> `NeovImePreeditCursor`): The part of preedit text under the cursor.
-- `NeovImePreeditCursorTail` (-> `NeovImePreeditCursor`): The cursor at the end of preedit text.
+- `NeovImePreeditSelected` (-> `PmenuSel`): The part of preedit text under the cursor.
 
 ## Configuration
 
