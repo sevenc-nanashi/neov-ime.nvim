@@ -272,19 +272,16 @@ local function preedit_handler_extmark(preedit_raw_text, cursor_offset_start, cu
         vim.fn.strdisplaywidth(preedit_raw_text))
     else
       hide_guicursor()
-      -- vim.fn.slice handles multibyte characters correctly so we use it to get the "last character" on cursor end
-      local byte_size_at_cursor_end = #vim.fn.slice(preedit_raw_text:sub(cursor_offset_end + 1), 0, 1)
-
       -- NOTE: string.sub uses 1-indexed positions, while cursor_offset_start and cursor_offset_end are 0-indexed.
       virt_text = {
-        { preedit_raw_text:sub(1, cursor_offset_start),                                               hl_preedit_bg },
-        { preedit_raw_text:sub(cursor_offset_start + 1, cursor_offset_end + byte_size_at_cursor_end), hl_selected },
-        { preedit_raw_text:sub(cursor_offset_end + byte_size_at_cursor_end + 1),                      hl_preedit_bg }
+        { preedit_raw_text:sub(1, cursor_offset_start),                     hl_preedit_bg },
+        { preedit_raw_text:sub(cursor_offset_start + 1, cursor_offset_end), hl_selected },
+        { preedit_raw_text:sub(cursor_offset_end + 1),                      hl_preedit_bg }
       }
 
       -- as we cannot get where the cursor is, we use the last highlighted position as the cursor position
       ime_context.update_cursor_position(0,
-        vim.fn.strdisplaywidth(preedit_raw_text:sub(1, cursor_offset_end + byte_size_at_cursor_end)))
+        vim.fn.strdisplaywidth(preedit_raw_text:sub(1, cursor_offset_end)))
     end
 
     ime_context.set_extmark_position(
