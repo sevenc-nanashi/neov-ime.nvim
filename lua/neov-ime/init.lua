@@ -386,6 +386,9 @@ end
 
 ---Install the preedit and commit handlers to Neovide.
 M.setup = function()
+  if neovide == nil then
+    return
+  end
   check_version()
 
   ---@diagnostic disable-next-line: undefined-global
