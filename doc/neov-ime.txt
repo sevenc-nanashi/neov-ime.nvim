@@ -1,4 +1,4 @@
-neov-ime.nvim					*neov-ime* *neov-ime*
+neov-ime.nvim
 
 CONTENTS					*neov-ime-contents*
 
